@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
@@ -306,6 +308,14 @@ namespace SpellEditor
             string[] caster_aura_state_strings = SafeTryFindResource("caster_aura_state_strings").Split('|');
             foreach (string casterAuraState in caster_aura_state_strings) { CasterAuraState.Items.Add(casterAuraState); }
 
+            // custom caster auras
+            string[] customCasterAuras = {
+                "Power Below 50%",
+                "Power Below 20%",
+                "Power Above 80%"
+            };
+            foreach (string casterAuraState in customCasterAuras) { CasterAuraState.Items.Add(casterAuraState); }
+
             TargetAuraState.Items.Clear();
             string[] target_aura_state_strings = SafeTryFindResource("target_aura_state_strings").Split('|');
             foreach (string targetAuraState in target_aura_state_strings) { TargetAuraState.Items.Add(targetAuraState); }
@@ -413,16 +423,6 @@ namespace SpellEditor
             ApplyAuraName2.Items.Clear();
             ApplyAuraName3.Items.Clear();
             FilterAuraCombo.Items.Clear();
-            string[] spell_aura_effect_names = SafeTryFindResource("spell_aura_effect_names").Split('|');
-            for (int i = 0; i < spell_aura_effect_names.Length; ++i)
-            {
-                var auraName = i + " - " + spell_aura_effect_names[i];
-                ApplyAuraName1.Items.Add(auraName);
-                ApplyAuraName2.Items.Add(auraName);
-                ApplyAuraName3.Items.Add(auraName);
-                FilterAuraCombo.Items.Add(auraName);
-            }
-            // custom stuff. I dont know where those resources are
 
             string[] customAuraNames = { "317 - SPELL_AURA_MOD_SPELL_DAMAGE_OF_ARMOR",
             "318 - SPELL_AURA_MOD_BLOCK_VALUE_SCALING",
@@ -460,32 +460,58 @@ namespace SpellEditor
             "350 - SPELL_AURA_MOD_TAXI_FLIGHT_SPEED",
             "351 - SPELL_AURA_MOD_FORGE_STAT",
             "352 - SPELL_AURA_MOD_RESTED_XP_MAX_AMOUNT",
-            "353 - SPELL_AURA_MOD_RESTED_XP_RECOVERY_RATE", };
+            "353 - SPELL_AURA_MOD_RESTED_XP_RECOVERY_RATE",
+            "354 - SPELL_AURA_MOD_CHANGE_DAMAGE_SCHOOL_OF_SPELL",
+            "355 - SPELL_AURA_PROC_TRIGGER_LEAP"};
 
-            foreach (string customName in customAuraNames)
+            string[] spell_aura_effect_names = SafeTryFindResource("spell_aura_effect_names").Split('|');
+            string[] comboEntries = new string[spell_aura_effect_names.Length+customAuraNames.Length];
+            for (int i = 0; i < spell_aura_effect_names.Length; ++i)
             {
-                ApplyAuraName1.Items.Add(customName);
-                ApplyAuraName2.Items.Add(customName);
-                ApplyAuraName3.Items.Add(customName);
-                FilterAuraCombo.Items.Add(customName);
+                comboEntries[i] = i + " - " + spell_aura_effect_names[i];
+            }
+            int x = 0;
+            for (int i = spell_aura_effect_names.Length; i < comboEntries.Length; ++i)
+            {
+                comboEntries[i] = customAuraNames[x];
+                x++;
             }
 
-            // end custom stuff
+            ApplyAuraName1.ItemsSource = new List<string>(comboEntries);
+            ApplyAuraName2.ItemsSource = new List<string>(comboEntries);
+            ApplyAuraName3.ItemsSource = new List<string>(comboEntries);
+            FilterAuraCombo.ItemsSource = new List<string>(comboEntries);
 
+            string[] customSpellNames = {
+                "165 - SPELL_EFFECT_LEARN_TRANSMOG_SET",
+                "166 - SPELL_EFFECT_CREATE_AREATRIGGER",
+                "167 - SPELL_EFFECT_JUMP_CHARGE",
+                "168 - SPELL_EFFECT_MODIFY_CURRENT_SPELL_COOLDOWN",
+                "169 - SPELL_EFFECT_REMOVE_CURRENT_SPELL_COOLDOWN",
+                "170 - SPELL_EFFECT_RESTORE_SPELL_CHARGE",
+                "171 - SPELL_EFFECT_GIVE_EXPERIENCE",
+                "172 - SPELL_EFFECT_GIVE_RESTED_EXPERIENCE_BONUS",
+                "173 - SPELL_EFFECT_GIVE_HONOR",
+                "174 - SPELL_EFFECT_RECEIVE_ITEM"
+            };
 
-            SpellEffect1.Items.Clear();
-            SpellEffect2.Items.Clear();
-            SpellEffect3.Items.Clear();
-            FilterSpellEffectCombo.Items.Clear();
             string[] spell_effect_names = SafeTryFindResource("spell_effect_names").Split('|');
+            comboEntries = new string[spell_effect_names.Length+customSpellNames.Length];
             for (int i = 0; i < spell_effect_names.Length; ++i)
             {
-                var effectName = i + " - " + spell_effect_names[i];
-                SpellEffect1.Items.Add(effectName);
-                SpellEffect2.Items.Add(effectName);
-                SpellEffect3.Items.Add(effectName);
-                FilterSpellEffectCombo.Items.Add(effectName);
+                comboEntries[i] = i + " - " + spell_effect_names[i];
             }
+            x = 0;
+            for (int i = spell_effect_names.Length; i < comboEntries.Length; ++i)
+            {
+                comboEntries[i] = customSpellNames[x];
+                x++;
+            }
+
+            SpellEffect1.ItemsSource = new List<string>(comboEntries);
+            SpellEffect2.ItemsSource = new List<string>(comboEntries);
+            SpellEffect3.ItemsSource = new List<string>(comboEntries);
+            FilterSpellEffectCombo.ItemsSource = new List<string>(comboEntries);
 
             // custom
             string[] customEffectNames = { "165 - SPELL_EFFECT_LEARN_TRANSMOG_SET",
@@ -522,23 +548,21 @@ namespace SpellEditor
             if (TargetA1.Items.Count == 0)
             {
                 int number = 0;
+                var comboList = new List<string>();
                 foreach (Targets t in Enum.GetValues(typeof(Targets)))
                 {
-                    string toDisplay = number + " - " + t;
-                    TargetA1.Items.Add(toDisplay);
-                    TargetB1.Items.Add(toDisplay);
-                    TargetA2.Items.Add(toDisplay);
-                    TargetB2.Items.Add(toDisplay);
-                    TargetA3.Items.Add(toDisplay);
-                    TargetB3.Items.Add(toDisplay);
-                    FilterSpellTargetA.Items.Add(toDisplay);
-                    FilterSpellTargetB.Items.Add(toDisplay);
-
-                    //ChainTarget1.Items.Add(toDisplay);
-                    //ChainTarget2.Items.Add(toDisplay);
-                    //ChainTarget3.Items.Add(toDisplay);
+                    comboList.Add(number + " - " + t);
                     ++number;
                 }
+
+                TargetA1.ItemsSource = new List<string>(comboList);
+                TargetB1.ItemsSource = new List<string>(comboList);
+                TargetA2.ItemsSource = new List<string>(comboList);
+                TargetB2.ItemsSource = new List<string>(comboList);
+                TargetA3.ItemsSource = new List<string>(comboList);
+                TargetB3.ItemsSource = new List<string>(comboList);
+                FilterSpellTargetA.ItemsSource = new List<string>(comboList);
+                FilterSpellTargetB.ItemsSource = new List<string>(comboList);
             }
 
             InterruptFlagsGrid.Children.Clear();
@@ -614,7 +638,8 @@ namespace SpellEditor
 
             try
             {
-                Title = $"{Title} - {WoWVersionManager.GetInstance().SelectedVersion().Version}";
+                var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
+                Title = $"{Title} - {WoWVersionManager.GetInstance().SelectedVersion().Version} - V{version.Substring(0, version.Length - 2)}";
 
                 stringObjectMap.Add(0, SpellName0);
                 stringObjectMap.Add(1, SpellName1);
@@ -700,6 +725,11 @@ namespace SpellEditor
                 foreach (ThreadSafeCheckBox cb in SpellMask33.Items) { cb.Checked += HandspellFamilyClassMask_Checked; cb.Unchecked += HandspellFamilyClassMask_Checked; }
 
                 loadAllData();
+
+                FilterSpellEffectCombo.SelectionChanged += FilterSpellEffectCombo_SelectionChanged;
+                FilterAuraCombo.SelectionChanged += FilterAuraCombo_SelectionChanged;
+                FilterSpellTargetA.SelectionChanged += FilterSpellTargetA_SelectionChanged;
+                FilterSpellTargetB.SelectionChanged += FilterSpellTargetB_SelectionChanged;
             }
 
             catch (Exception ex)
@@ -997,11 +1027,11 @@ namespace SpellEditor
 
         private void _KeyUp(object sender, KeyEventArgs e)
         {
-            if (sender == FilterSpellNames && e.Key == Key.Back)
-            {
-                _KeyDown(sender, new KeyEventArgs(Keyboard.PrimaryDevice, Keyboard.PrimaryDevice.ActiveSource, 0, Key.Space));
-            }
-            else if (sender == FilterIcons && e.Key == Key.Back)
+            if (e.Key == Key.Back && (
+                sender == FilterSpellNames || 
+                sender == FilterIcons ||
+                sender == Attributes1Search ||
+                sender == Attributes2Search))
             {
                 _KeyDown(sender, new KeyEventArgs(Keyboard.PrimaryDevice, Keyboard.PrimaryDevice.ActiveSource, 0, Key.Space));
             }
@@ -1108,6 +1138,25 @@ namespace SpellEditor
                     image.Visibility = name.Contains(input) ? Visibility.Visible : Visibility.Collapsed;
                 }
             }
+            else if (sender == Attributes1Search || sender == Attributes2Search)
+            {
+                var input = sender == Attributes1Search ? 
+                    Attributes1Search.Text.ToLower() : 
+                    Attributes2Search.Text.ToLower();
+                var controls = sender == Attributes1Search ? 
+                    new StackPanel[] { Attributes1, Attributes2, Attributes3, Attributes4 } :
+                    new StackPanel[] { Attributes5, Attributes6, Attributes7, Attributes8 };
+
+                for (int i = 0; i < controls.Length; ++i)
+                {
+                    foreach (ThreadSafeCheckBox box in controls[i].Children)
+                    {
+                        box.Visibility = box.Content.ToString().Length <= 0 || box.Content.ToString().ToLower().Contains(input) ?
+                            Visibility.Visible :
+                            Visibility.Collapsed;
+                    }
+                }
+            }
         }
         #endregion
 
@@ -1135,6 +1184,7 @@ namespace SpellEditor
                     foreach (var binding in BindingManager.GetInstance().GetAllBindings())
                         adapter.Execute($"drop table `{binding.Name.ToLower()}`");
                     adapter.CreateAllTablesFromBindings();
+                    selectedID = 0;
                     PopulateSelectSpell();
                 }
                 return;
@@ -1430,6 +1480,12 @@ namespace SpellEditor
                                 break;
                             case 12: // Power Below 50%
                                 row["CasterAuraState"] = 24;
+                                break;
+                            case 13: // Power Below 20%
+                                row["CasterAuraState"] = 25;
+                                break;
+                            case 14: // Power above 80%
+                                row["CasterAuraState"] = 26;
                                 break;
                         }
                     }
@@ -1776,7 +1832,7 @@ namespace SpellEditor
 
                     ShowFlyoutMessage($"Saved spell {selectedID}.");
 
-                    ReloadSpellListForSpellId(row);
+                    SelectSpell.UpdateSpell(row);
                 }
                 catch (Exception ex)
                 {
@@ -1818,27 +1874,6 @@ namespace SpellEditor
             }
         }
 
-        private bool ReloadSpellListForSpellId(DataRow row)
-        {
-            var changedId = uint.Parse(row[0].ToString());
-            foreach (var item in SelectSpell.Items)
-            {
-                var panel = item as StackPanel;
-                var text = panel.Children[1] as TextBlock;
-                // text block is formatted as: $" { id } - { spellName }"
-                if (uint.TryParse(text.Text.Substring(0, text.Text.IndexOf('-')).Trim(), out var id) &&
-                    changedId == id)
-                {
-                    text.Text = $" { id } - { row["SpellName" + (GetLanguage() - 1)] }";
-                    var image = panel.Children[0] as Image;
-                    image.ToolTip = row["SpellIconID"].ToString();
-                    image.Visibility = Visibility.Hidden;
-                    image.Visibility = Visibility.Visible;
-                    return true;
-                }
-            }
-            return false;
-        }
         #endregion
 
         #region Utilities
@@ -2270,6 +2305,12 @@ namespace SpellEditor
                         break;
                     case 24: // Power Below 50%
                         CasterAuraState.ThreadSafeIndex = 12;
+                        break;
+                    case 25: // Power Below 50%
+                        CasterAuraState.ThreadSafeIndex = 13;
+                        break;
+                    case 26: // Power Below 50%
+                        CasterAuraState.ThreadSafeIndex = 14;
                         break;
                 }
 
@@ -4231,6 +4272,7 @@ namespace SpellEditor
             {
                 return;
             }
+            
             var box = sender as ComboBox;
             var selected = box.SelectedItem?.ToString() ?? "0 ";
             var id = int.Parse(selected.Substring(0, selected.IndexOf(' ')));
