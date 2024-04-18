@@ -462,7 +462,9 @@ namespace SpellEditor
             "352 - SPELL_AURA_MOD_RESTED_XP_MAX_AMOUNT",
             "353 - SPELL_AURA_MOD_RESTED_XP_RECOVERY_RATE",
             "354 - SPELL_AURA_MOD_CHANGE_DAMAGE_SCHOOL_OF_SPELL",
-            "355 - SPELL_AURA_PROC_TRIGGER_LEAP"};
+            "355 - SPELL_AURA_PROC_TRIGGER_LEAP",
+            "356 - SPELL_AURA_PROC_MANASTEAL",
+            "358 - SPELL_AURA_MOD_MECHANIC_CRIT_CHANCE"};
 
             string[] spell_aura_effect_names = SafeTryFindResource("spell_aura_effect_names").Split('|');
             string[] comboEntries = new string[spell_aura_effect_names.Length+customAuraNames.Length];
